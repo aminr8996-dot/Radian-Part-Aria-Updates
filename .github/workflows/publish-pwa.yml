@@ -36,14 +36,14 @@ jobs:
           s=re.sub(r'<meta name="apple-mobile-web-app-capable"[^>]*>', '', s)
           s=re.sub(r'<script src="install-fix-v2\.js[^>]*></script>', '', s)
           s=s.replace('>نصب روی گوشی</button>', '>نصب کامل برنامه</button>')
-          s=s.replace('src="pwa.js"','src="pwa.js?v=3410"')
-          s=s.replace('src="logo.png"','src="logo.png?v=3410"')
-          s=s.replace('href="logo.png"','href="logo.png?v=3410"')
+          s=s.replace('src="pwa.js"','src="pwa.js?v=3411"')
+          s=s.replace('src="logo.png"','src="logo.png?v=3411"')
+          s=s.replace('href="logo.png"','href="logo.png?v=3411"')
           p.write_text(s,encoding='utf-8')
           sw=Path('pwa/service-worker.js')
           if sw.exists():
               t=sw.read_text(encoding='utf-8')
-              t=re.sub(r"radian-pwa-[^']+", 'radian-web-v3410', t, count=1)
+              t=re.sub(r"radian-[^']+", 'radian-web-v3411', t, count=1)
               sw.write_text(t,encoding='utf-8')
           PY
 
