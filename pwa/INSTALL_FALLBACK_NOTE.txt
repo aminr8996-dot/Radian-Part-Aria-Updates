@@ -1,0 +1,1 @@
+Radian PWA install fallback active: if browser install prompt is unavailable, show direct Android APK install button. Build marker 3406.
