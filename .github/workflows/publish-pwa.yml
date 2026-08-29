@@ -23,6 +23,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare latest customer build
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('pwa/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('src="pwa.js"','src="pwa.js?v=3405"')
+          s=s.replace('src="logo.png"','src="logo.png?v=3405"')
+          s=s.replace('href="logo.png"','href="logo.png?v=3405"')
+          s=s.replace('href="manifest.webmanifest"','href="manifest.webmanifest?v=3405"')
+          p.write_text(s,encoding='utf-8')
+          sw=Path('pwa/service-worker.js')
+          t=sw.read_text(encoding='utf-8').replace('installfix-3404','installfix-3405')
+          sw.write_text(t,encoding='utf-8')
+          PY
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
