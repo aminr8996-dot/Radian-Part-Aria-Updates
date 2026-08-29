@@ -25,14 +25,11 @@ jobs:
 
       - name: Prepare latest APK and customer page
         run: |
-          if [ -f Radian-Part-Aria.apk ]; then
-            cp Radian-Part-Aria.apk pwa/Radian-Part-Aria.apk
-          else
-            curl -L --fail 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-97f0-8210-84ea-30f3dd5914c4/raw?se=2026-08-29T22%3A58%3A09Z&sp=r&sv=2026-02-06&sr=b&scid=2b6978d6-bb1e-552d-917a-a3987a150071&skoid=a3a8eefe-d4bd-4909-ab1d-2a75a2302fac&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-29T09%3A13%3A26Z&ske=2026-08-30T09%3A13%3A26Z&sks=b&skv=2026-02-06&sig=gT%2BiFHrJiK3rVsmfL%2BytDrW8dcino%2Bw7fR8rePHhFJM%3D' -o /tmp/radian-apk.zip
-            unzip -o /tmp/radian-apk.zip -d /tmp/radian-apk
-            cp /tmp/radian-apk/Radian-Part-Aria-v3.4.1.apk Radian-Part-Aria.apk
-            cp Radian-Part-Aria.apk pwa/Radian-Part-Aria.apk
-          fi
+          curl -L --fail 'https://sdmntprpolandcentral.oaiusercontent.com/files/00000000-3d54-820a-837d-6728eb65cb0f/raw?se=2026-08-29T23%3A16%3A12Z&sp=r&sv=2026-02-06&sr=b&scid=a40ae84e-ae1d-5a86-867c-07cb5de601e8&skoid=76024c37-11e2-4c92-aa07-7e519fbe2d0f&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-29T18%3A42%3A03Z&ske=2026-08-30T18%3A42%3A03Z&sks=b&skv=2026-02-06&sig=LnmtxMMilxuXeYk05Of14bZTjsY3GQELIFeZ1eYtMV0%3D' -o /tmp/radian-apk.zip
+          rm -rf /tmp/radian-apk && mkdir -p /tmp/radian-apk
+          unzip -o /tmp/radian-apk.zip -d /tmp/radian-apk
+          cp /tmp/radian-apk/Radian-Part-Aria-v3.4.1.apk Radian-Part-Aria.apk
+          cp Radian-Part-Aria.apk pwa/Radian-Part-Aria.apk
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -43,11 +40,11 @@ jobs:
           s=re.sub(r'<meta name="apple-mobile-web-app-capable"[^>]*>', '', s)
           s=re.sub(r'<script src="install-fix-v2\.js[^>]*></script>', '', s)
           s=s.replace('>نصب روی گوشی</button>', '>نصب کامل برنامه</button>')
-          s=s.replace('src="pwa.js"','src="pwa.js?v=3416"')
+          s=s.replace('src="pwa.js"','src="pwa.js?v=3417"')
           s=s.replace('src="excel_catalog_fix.js?v=1"','src="excel_catalog_fix.js?v=2"')
-          s=s.replace('src="logo.png"','src="logo.png?v=3416"')
-          s=s.replace('href="logo.png"','href="logo.png?v=3416"')
-          s=s.replace('href="style_v33_2.css"','href="style_v33_2.css?v=3416"')
+          s=s.replace('src="logo.png"','src="logo.png?v=3417"')
+          s=s.replace('href="logo.png"','href="logo.png?v=3417"')
+          s=s.replace('href="style_v33_2.css"','href="style_v33_2.css?v=3417"')
           p.write_text(s,encoding='utf-8')
           PY
 
