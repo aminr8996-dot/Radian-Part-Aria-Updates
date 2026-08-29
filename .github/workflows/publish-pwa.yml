@@ -23,26 +23,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare latest customer build
+      - name: Prepare customer install page
         run: |
+          cp Radian-Part-Aria.apk pwa/Radian-Part-Aria.apk
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path('pwa/index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('src="pwa.js"','src="pwa.js?v=3405"')
-          s=s.replace('src="logo.png"','src="logo.png?v=3405"')
-          s=s.replace('href="logo.png"','href="logo.png?v=3405"')
-          s=s.replace('href="manifest.webmanifest"','href="manifest.webmanifest?v=3405"')
+          s=re.sub(r'<link rel="manifest"[^>]*>', '', s)
+          s=re.sub(r'<meta name="mobile-web-app-capable"[^>]*>', '', s)
+          s=re.sub(r'<meta name="apple-mobile-web-app-capable"[^>]*>', '', s)
+          s=re.sub(r'<script src="install-fix-v2\.js[^>]*></script>', '', s)
+          s=s.replace('>نصب روی گوشی</button>', '>نصب کامل برنامه</button>')
+          s=s.replace('src="pwa.js"','src="pwa.js?v=3410"')
+          s=s.replace('src="logo.png"','src="logo.png?v=3410"')
+          s=s.replace('href="logo.png"','href="logo.png?v=3410"')
           p.write_text(s,encoding='utf-8')
           sw=Path('pwa/service-worker.js')
-          t=sw.read_text(encoding='utf-8').replace('installfix-3404','installfix-3405')
-          sw.write_text(t,encoding='utf-8')
+          if sw.exists():
+              t=sw.read_text(encoding='utf-8')
+              t=re.sub(r"radian-pwa-[^']+", 'radian-web-v3410', t, count=1)
+              sw.write_text(t,encoding='utf-8')
           PY
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload PWA
+      - name: Upload customer page
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./pwa
