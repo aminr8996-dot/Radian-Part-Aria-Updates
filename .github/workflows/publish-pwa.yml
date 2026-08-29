@@ -23,9 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare customer install page
+      - name: Prepare latest APK and customer page
         run: |
-          cp Radian-Part-Aria.apk pwa/Radian-Part-Aria.apk
+          curl -L --fail 'https://sdmntprnortheu.oaiusercontent.com/files/00000000-e718-81f4-8509-bccca61d0551/raw?se=2026-08-29T19%3A56%3A31Z&sp=r&sv=2026-02-06&sr=b&scid=645be232-c5a8-549c-9cf3-de48823b1892&skoid=061609b8-1cdb-4a5b-9e68-c7ab9a523a8f&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-28T20%3A52%3A20Z&ske=2026-08-29T20%3A52%3A20Z&sks=b&skv=2026-02-06&sig=DgeRXndQ0zJqFENRVglIS0EUYD0eAtbAGGufTyDhreY%3D' -o /tmp/radian-apk.zip
+          unzip -o /tmp/radian-apk.zip -d /tmp/radian-apk
+          cp /tmp/radian-apk/Radian-Part-Aria-v3.4.1.apk pwa/Radian-Part-Aria.apk
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -36,15 +38,10 @@ jobs:
           s=re.sub(r'<meta name="apple-mobile-web-app-capable"[^>]*>', '', s)
           s=re.sub(r'<script src="install-fix-v2\.js[^>]*></script>', '', s)
           s=s.replace('>نصب روی گوشی</button>', '>نصب کامل برنامه</button>')
-          s=s.replace('src="pwa.js"','src="pwa.js?v=3411"')
-          s=s.replace('src="logo.png"','src="logo.png?v=3411"')
-          s=s.replace('href="logo.png"','href="logo.png?v=3411"')
+          s=s.replace('src="pwa.js"','src="pwa.js?v=3412"')
+          s=s.replace('src="logo.png"','src="logo.png?v=3412"')
+          s=s.replace('href="logo.png"','href="logo.png?v=3412"')
           p.write_text(s,encoding='utf-8')
-          sw=Path('pwa/service-worker.js')
-          if sw.exists():
-              t=sw.read_text(encoding='utf-8')
-              t=re.sub(r"radian-[^']+", 'radian-web-v3411', t, count=1)
-              sw.write_text(t,encoding='utf-8')
           PY
 
       - name: Configure GitHub Pages
