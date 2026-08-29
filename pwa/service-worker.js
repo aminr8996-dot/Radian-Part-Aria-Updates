@@ -1,5 +1,5 @@
-const C='radian-pwa-v3-4-0-installfix-3404';
-const F=['./','./index.html','./config_v33.js','./app_v33_1.js','./app_v33_2.js','./app_v33_3.js','./product_adapter_v33.js','./products1.js','./products2.js','./products3.js','./products4.js','./style.css','./style_v33_1.css','./style_v33_2.css','./pwa.css','./pwa.js','./manifest.webmanifest','./logo.png','./icon-192.png','./icon-512.png'];
+const C='radian-pwa-v3-4-0-installfix-3407';
+const F=['./','./index.html','./config_v33.js','./app_v33_1.js','./app_v33_2.js','./app_v33_3.js','./product_adapter_v33.js','./products1.js','./products2.js','./products3.js','./products4.js','./style.css','./style_v33_1.css','./style_v33_2.css','./pwa.css','./pwa.js','./install-fix-v2.js','./manifest.webmanifest','./logo.png','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const req=e.request;if(req.mode==='navigate'){e.respondWith(fetch(req,{cache:'no-store'}).then(r=>{const copy=r.clone();caches.open(C).then(c=>c.put('./index.html',copy));return r}).catch(()=>caches.match('./index.html')));return}e.respondWith(fetch(req).then(r=>{const copy=r.clone();caches.open(C).then(c=>c.put(req,copy));return r}).catch(()=>caches.match(req)))});
