@@ -25,7 +25,7 @@ jobs:
 
       - name: Prepare latest APK and customer page
         run: |
-          curl -L --fail 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-5938-8210-9f80-ff9ea316d793/raw?se=2026-08-29T20%3A00%3A57Z&sp=r&sv=2026-02-06&sr=b&scid=c8550b86-aef3-501f-b9b8-bb744e3a2e55&skoid=061609b8-1cdb-4a5b-9e68-c7ab9a523a8f&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-29T19%3A50%3A36Z&ske=2026-08-30T19%3A50%3A36Z&sks=b&skv=2026-02-06&sig=VVL9c71hqY2JYHo/cTGvVXGgwChzNAk3DE7W%2BfKre7c%3D' -o /tmp/radian-apk.zip
+          curl -L --fail 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-3d30-8210-bdb1-86c852a719f2/raw?se=2026-08-29T20%3A07%3A49Z&sp=r&sv=2026-02-06&sr=b&scid=409329a5-544b-572c-b282-a557e37ff20e&skoid=061609b8-1cdb-4a5b-9e68-c7ab9a523a8f&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-29T07%3A33%3A09Z&ske=2026-08-30T07%3A33%3A09Z&sks=b&skv=2026-02-06&sig=5gmhl8f952UjbwZg5VLA6CqhOig%2Bi%2Bn5M6ClEgY4SYg%3D' -o /tmp/radian-apk.zip
           unzip -o /tmp/radian-apk.zip -d /tmp/radian-apk
           cp /tmp/radian-apk/Radian-Part-Aria-v3.4.1.apk pwa/Radian-Part-Aria.apk
           python3 - <<'PY'
@@ -38,9 +38,9 @@ jobs:
           s=re.sub(r'<meta name="apple-mobile-web-app-capable"[^>]*>', '', s)
           s=re.sub(r'<script src="install-fix-v2\.js[^>]*></script>', '', s)
           s=s.replace('>نصب روی گوشی</button>', '>نصب کامل برنامه</button>')
-          s=s.replace('src="pwa.js"','src="pwa.js?v=3413"')
-          s=s.replace('src="logo.png"','src="logo.png?v=3413"')
-          s=s.replace('href="logo.png"','href="logo.png?v=3413"')
+          s=s.replace('src="pwa.js"','src="pwa.js?v=3414"')
+          s=s.replace('src="logo.png"','src="logo.png?v=3414"')
+          s=s.replace('href="logo.png"','href="logo.png?v=3414"')
           p.write_text(s,encoding='utf-8')
           PY
 
