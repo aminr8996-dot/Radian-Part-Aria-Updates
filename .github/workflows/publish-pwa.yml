@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -25,9 +25,14 @@ jobs:
 
       - name: Prepare latest APK and customer page
         run: |
-          curl -L --fail 'https://sdmntprpolandcentral.oaiusercontent.com/files/00000000-fce8-820a-9b18-b55e93ae8457/raw?se=2026-08-29T21%3A15%3A35Z&sp=r&sv=2026-02-06&sr=b&scid=72c07c4c-2e84-54f5-a225-5fd63635a0d0&skoid=e5f84a89-964a-4fd3-92c2-c2cb3a12ea16&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-29T05%3A55%3A36Z&ske=2026-08-30T05%3A55%3A36Z&sks=b&skv=2026-02-06&sig=wM2z5BbA1Na2HsZ9i4jJi8F9MFksMz50ARbm9jF9aR4%3D' -o /tmp/radian-apk.zip
-          unzip -o /tmp/radian-apk.zip -d /tmp/radian-apk
-          cp /tmp/radian-apk/Radian-Part-Aria-v3.4.1.apk pwa/Radian-Part-Aria.apk
+          if [ -f Radian-Part-Aria.apk ]; then
+            cp Radian-Part-Aria.apk pwa/Radian-Part-Aria.apk
+          else
+            curl -L --fail 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-97f0-8210-84ea-30f3dd5914c4/raw?se=2026-08-29T22%3A58%3A09Z&sp=r&sv=2026-02-06&sr=b&scid=2b6978d6-bb1e-552d-917a-a3987a150071&skoid=a3a8eefe-d4bd-4909-ab1d-2a75a2302fac&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-29T09%3A13%3A26Z&ske=2026-08-30T09%3A13%3A26Z&sks=b&skv=2026-02-06&sig=gT%2BiFHrJiK3rVsmfL%2BytDrW8dcino%2Bw7fR8rePHhFJM%3D' -o /tmp/radian-apk.zip
+            unzip -o /tmp/radian-apk.zip -d /tmp/radian-apk
+            cp /tmp/radian-apk/Radian-Part-Aria-v3.4.1.apk Radian-Part-Aria.apk
+            cp Radian-Part-Aria.apk pwa/Radian-Part-Aria.apk
+          fi
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -38,12 +43,23 @@ jobs:
           s=re.sub(r'<meta name="apple-mobile-web-app-capable"[^>]*>', '', s)
           s=re.sub(r'<script src="install-fix-v2\.js[^>]*></script>', '', s)
           s=s.replace('>نصب روی گوشی</button>', '>نصب کامل برنامه</button>')
-          s=s.replace('src="pwa.js"','src="pwa.js?v=3415"')
-          s=s.replace('src="logo.png"','src="logo.png?v=3415"')
-          s=s.replace('href="logo.png"','href="logo.png?v=3415"')
-          s=s.replace('href="style_v33_2.css"','href="style_v33_2.css?v=3415"')
+          s=s.replace('src="pwa.js"','src="pwa.js?v=3416"')
+          s=s.replace('src="excel_catalog_fix.js?v=1"','src="excel_catalog_fix.js?v=2"')
+          s=s.replace('src="logo.png"','src="logo.png?v=3416"')
+          s=s.replace('href="logo.png"','href="logo.png?v=3416"')
+          s=s.replace('href="style_v33_2.css"','href="style_v33_2.css?v=3416"')
           p.write_text(s,encoding='utf-8')
           PY
+
+      - name: Persist latest APK
+        run: |
+          if ! git diff --quiet -- Radian-Part-Aria.apk || ! git ls-files --error-unmatch Radian-Part-Aria.apk >/dev/null 2>&1; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add Radian-Part-Aria.apk
+            git commit -m "Update customer APK [skip ci]"
+            git push
+          fi
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
