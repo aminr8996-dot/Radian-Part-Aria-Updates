@@ -1,3 +1,5 @@
 .quick-tools{flex-wrap:wrap}.quick-tools .top-btn{min-width:22%;padding-left:4px;padding-right:4px}
-.pwa-install-welcome{width:100%;min-height:50px;border:1px solid #ead3d5;border-radius:15px;background:#fff7f7;color:#8f1118;font-weight:900;font-size:15px;margin-top:10px}
-.product{position:relative;overflow:hidden}.product::before{content:"";position:absolute;inset:2px 22% 2px 3px;background:url('logo.png') 25% center/58% no-repeat!important;opacity:.085!important;filter:grayscale(100%);pointer-events:none}.product>*{position:relative;z-index:1}
+.enter-app{background:#fff!important;color:#8f1118!important;border:1px solid #ead3d5!important;box-shadow:none!important}
+.pwa-install-welcome{width:100%;min-height:56px;border:0;border-radius:15px;background:#b80f16;color:#fff;font-weight:900;font-size:17px;margin-top:10px;box-shadow:0 8px 20px rgba(184,15,22,.18)}
+.welcome-logo,.brand-logo{object-fit:contain!important}
+.product{position:relative;overflow:hidden}.product::before{content:"";position:absolute;inset:2px 18% 2px 3px;background:url('logo.png?v=3404') 24% center/62% no-repeat!important;opacity:.075!important;filter:grayscale(100%);pointer-events:none}.product>*{position:relative;z-index:1}
