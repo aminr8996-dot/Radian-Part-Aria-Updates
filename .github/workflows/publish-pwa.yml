@@ -1,14 +1,28 @@
 name: Publish customer PWA
+
 on:
   push:
+  workflow_dispatch:
+
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: radian-pwa-pages
+  cancel-in-progress: true
+
 jobs:
   publish:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Build PWA from current APK
         run: |
           rm -rf pwa /tmp/radian-pwa && mkdir -p pwa /tmp/radian-pwa
@@ -27,34 +41,66 @@ jobs:
           p.write_text(s,encoding='utf-8')
           Path('pwa/config_v33.js').write_text(Path('pwa/config_v33.js').read_text(encoding='utf-8').replace('3.3.0','3.4.0'),encoding='utf-8')
           PY
+
           cat > pwa/pwa.css <<'CSS'
           .quick-tools{flex-wrap:wrap}.quick-tools .top-btn{min-width:22%;padding-left:4px;padding-right:4px}
           .pwa-install-welcome{width:100%;min-height:50px;border:1px solid #ead3d5;border-radius:15px;background:#fff7f7;color:#8f1118;font-weight:900;font-size:15px;margin-top:10px}
           .product{position:relative;overflow:hidden}.product::before{content:"";position:absolute;inset:2px 22% 2px 3px;background:url('logo.png') 25% center/58% no-repeat!important;opacity:.085!important;filter:grayscale(100%);pointer-events:none}.product>*{position:relative;z-index:1}
           CSS
+
           cat > pwa/pwa.js <<'JS'
           let radianInstallPrompt=null;
           const byId=id=>document.getElementById(id);
           function installed(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
           function installLabels(){['installPwa','installWelcome'].forEach(id=>{const b=byId(id);if(!b)return;b.textContent=installed()?'نصب شده':(radianInstallPrompt?'نصب روی گوشی':'راهنمای نصب');b.disabled=installed()})}
-          async function installRadian(){if(installed())return;if(radianInstallPrompt){const p=radianInstallPrompt;radianInstallPrompt=null;p.prompt();try{await p.userChoice}catch(e){}installLabels();return}alert('از منوی مرورگر گزینه «Install app» یا «Add to Home screen» را بزنید.')}
+          async function installRadian(){if(installed())return;if(radianInstallPrompt){const p=radianInstallPrompt;radianInstallPrompt=null;p.prompt();try{await p.userChoice}catch(e){}installLabels();return}showInstallHelp()}
           function welcome(){document.querySelectorAll('.overlay.open').forEach(x=>x.classList.remove('open'));const w=byId('welcomeScreen');if(w)w.classList.remove('hidden');document.body.style.overflow='';scrollTo(0,0)}
+          function currentChromeIntent(){const fallback=encodeURIComponent(location.href);const hostPath=location.host+location.pathname+location.search;return `intent://${hostPath}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`}
+          function openInChrome(){location.href=currentChromeIntent()}
+          function isAndroid(){return /Android/i.test(navigator.userAgent)}
+          function isInAppBrowser(){const u=navigator.userAgent;return isAndroid()&&(/;\s*wv\)/i.test(u)||/\bwv\b/i.test(u)||/Version\/4\.0.*Chrome/i.test(u)||/Rubika/i.test(u))}
+          function addRuntimeStyles(){const s=document.createElement('style');s.textContent=`
+          .radian-menu-btn{border:1px solid #ead3d5;background:#fff7f7;color:#8f1118;border-radius:9px;min-height:36px;padding:5px 10px;font-size:18px;font-weight:900;flex:0 0 46px}.radian-drawer-backdrop{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);display:none}.radian-drawer-backdrop.open{display:block}.radian-drawer{position:absolute;top:0;right:0;width:min(86vw,340px);height:100%;background:#fff;box-shadow:-8px 0 28px rgba(0,0,0,.18);padding:18px;overflow:auto}.radian-drawer-head{text-align:center;border-bottom:1px solid #eee;padding-bottom:14px;margin-bottom:12px}.radian-drawer-head img{width:92px;height:92px;object-fit:contain}.radian-drawer-head b{display:block;font-size:18px;margin-top:6px}.radian-menu-item{width:100%;min-height:48px;margin:6px 0;border:1px solid #e4e7ec;background:#fff;border-radius:12px;text-align:right;padding:8px 12px;font-weight:900;color:#344054}.radian-menu-item.primary{background:#b80f16;color:#fff;border-color:#b80f16}.radian-about{font-size:12px;line-height:1.9;color:#667085;background:#f8fafc;border-radius:12px;padding:12px;margin-top:10px;text-align:right}.chrome-prompt{position:fixed;inset:0;z-index:900;background:#fff;display:none;align-items:center;justify-content:center;padding:22px}.chrome-prompt.open{display:flex}.chrome-card{width:min(100%,420px);text-align:center}.chrome-card img{width:150px;height:150px;object-fit:contain;margin-bottom:10px}.chrome-card h2{font-size:20px;margin:6px 0}.chrome-card p{color:#667085;font-size:13px;line-height:1.9}.chrome-open{width:100%;min-height:56px;border:0;border-radius:15px;background:#b80f16;color:#fff;font-size:16px;font-weight:900;margin-top:14px}.chrome-stay{width:100%;min-height:48px;border:1px solid #d0d5dd;border-radius:13px;background:#fff;color:#344054;font-weight:800;margin-top:8px}`;document.head.appendChild(s)}
+          function buildMenu(){const tools=document.querySelector('.quick-tools');if(!tools)return;const oldInstall=byId('installPwa'),oldExit=byId('goWelcome');if(oldInstall)oldInstall.style.display='none';if(oldExit)oldExit.style.display='none';const btn=document.createElement('button');btn.className='radian-menu-btn';btn.type='button';btn.setAttribute('aria-label','منوی برنامه');btn.textContent='☰';tools.prepend(btn);const back=document.createElement('div');back.className='radian-drawer-backdrop';back.innerHTML=`<aside class="radian-drawer"><div class="radian-drawer-head"><img src="logo.png" alt="لوگوی رادیان"><b>رادیان پارت آریا</b><small>لیست قیمت و ثبت سفارش مشتری</small></div><button class="radian-menu-item primary" id="drawerInstall">نصب روی گوشی</button>${isAndroid()?'<button class="radian-menu-item" id="drawerChrome">باز کردن در Chrome</button>':''}<button class="radian-menu-item" id="drawerAbout">درباره ما</button><button class="radian-menu-item" id="drawerHome">صفحه اول رادیان</button><button class="radian-menu-item" id="drawerExit">خروج</button><div class="radian-about" id="aboutBox" hidden><b>درباره رادیان پارت آریا</b><br>سامانه مشاهده لیست قیمت و ثبت سفارش مشتریان رادیان پارت آریا.<br>نسخه برنامه: 3.4.0</div></aside>`;document.body.appendChild(back);const close=()=>back.classList.remove('open');btn.onclick=()=>back.classList.add('open');back.addEventListener('click',e=>{if(e.target===back)close()});byId('drawerInstall').onclick=()=>{close();installRadian()};byId('drawerChrome')&&(byId('drawerChrome').onclick=()=>{close();openInChrome()});byId('drawerAbout').onclick=()=>{const a=byId('aboutBox');a.hidden=!a.hidden};byId('drawerHome').onclick=()=>{close();welcome()};byId('drawerExit').onclick=()=>{close();welcome()}}
+          function showInstallHelp(){let p=byId('radianInstallHelp');if(!p){p=document.createElement('div');p.id='radianInstallHelp';p.className='chrome-prompt';p.innerHTML=`<div class="chrome-card"><img src="logo.png" alt="لوگوی رادیان"><h2>نصب رادیان روی گوشی</h2><p>برای نصب راحت‌تر، برنامه را در Chrome باز کنید. سپس گزینه «نصب روی گوشی» را بزنید.</p>${isAndroid()?'<button id="helpChrome" class="chrome-open">باز کردن در Chrome</button>':''}<button id="helpClose" class="chrome-stay">ادامه در همین صفحه</button></div>`;document.body.appendChild(p);byId('helpChrome')&&(byId('helpChrome').onclick=openInChrome);byId('helpClose').onclick=()=>p.classList.remove('open')}p.classList.add('open')}
+          function maybePromptChrome(){if(installed()||!isInAppBrowser())return;const p=document.createElement('div');p.className='chrome-prompt open';p.id='chromePrompt';p.innerHTML=`<div class="chrome-card"><img src="logo.png" alt="لوگوی رادیان"><h2>رادیان پارت آریا</h2><p>برای نصب آسان و اجرای بهتر برنامه، پیشنهاد می‌شود این صفحه را در <b>Google Chrome</b> باز کنید.</p><button id="openChromeNow" class="chrome-open">باز کردن در Chrome</button><button id="stayHere" class="chrome-stay">ادامه در همین مرورگر</button></div>`;document.body.appendChild(p);byId('openChromeNow').onclick=openInChrome;byId('stayHere').onclick=()=>p.remove()}
           addEventListener('beforeinstallprompt',e=>{e.preventDefault();radianInstallPrompt=e;installLabels()});
           addEventListener('appinstalled',()=>{radianInstallPrompt=null;installLabels()});
           byId('installPwa')?.addEventListener('click',installRadian);byId('installWelcome')?.addEventListener('click',installRadian);byId('goWelcome')?.addEventListener('click',welcome);
           if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
-          installLabels();
+          addRuntimeStyles();buildMenu();installLabels();setTimeout(maybePromptChrome,250);
           JS
+
           cat > pwa/manifest.webmanifest <<'JSON'
           {"name":"رادیان پارت آریا","short_name":"رادیان","lang":"fa","dir":"rtl","start_url":"./index.html","scope":"./","display":"standalone","background_color":"#ffffff","theme_color":"#0f2742","icons":[{"src":"logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
           JSON
+
           python3 - <<'PY'
           from pathlib import Path
           files=[p.name for p in Path('pwa').iterdir() if p.is_file() and p.name!='service-worker.js']
-          Path('pwa/service-worker.js').write_text("const C='radian-pwa-v3-4-0',F="+repr(['./']+['./'+x for x in files])+";self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const q=r.clone();caches.open(C).then(c=>c.put(e.request,q));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))))});",encoding='utf-8')
+          Path('pwa/service-worker.js').write_text("const C='radian-pwa-v3-4-0-menu2',F="+repr(['./']+['./'+x for x in files])+";self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const q=r.clone();caches.open(C).then(c=>c.put(e.request,q));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))))});",encoding='utf-8')
           PY
+
+      - name: Save generated PWA
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pwa
-          git commit -m "Publish Radian customer PWA v3.4.0"
-          git push
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Radian customer PWA v3.4.0"
+            git push
+          fi
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./pwa
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
