@@ -1,0 +1,60 @@
+name: Publish customer PWA
+on:
+  push:
+permissions:
+  contents: write
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build PWA from current APK
+        run: |
+          rm -rf pwa /tmp/radian-pwa && mkdir -p pwa /tmp/radian-pwa
+          unzip -q Radian-Part-Aria.apk 'assets/*' -d /tmp/radian-pwa
+          cp /tmp/radian-pwa/assets/* pwa/
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('pwa/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('<meta name="theme-color" content="#0f2742">','<meta name="theme-color" content="#0f2742"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="logo.png"><link rel="apple-touch-icon" href="logo.png">')
+          s=s.replace('نسخه 3.3.0','نسخه 3.4.0')
+          s=s.replace('<div class="quick-tools"><button class="top-btn" id="showTools">خروجی Excel</button><button class="top-btn" id="showHistory">سفارش‌های من <span id="historyCount" class="history-count">۰</span></button></div>','<div class="quick-tools"><button class="top-btn" id="installPwa">نصب</button><button class="top-btn" id="goWelcome">خروج</button><button class="top-btn" id="showTools">Excel</button><button class="top-btn" id="showHistory">سفارش‌ها <span id="historyCount" class="history-count">۰</span></button></div>')
+          s=s.replace('<button id="enterApp" class="enter-app" type="button">ورود به اپ</button>','<button id="enterApp" class="enter-app" type="button">ورود به اپ</button><button id="installWelcome" class="pwa-install-welcome" type="button">نصب روی گوشی</button>')
+          s=s.replace('</head>','<link rel="stylesheet" href="pwa.css"></head>')
+          s=s.replace('</body>','<script src="pwa.js"></script></body>')
+          p.write_text(s,encoding='utf-8')
+          Path('pwa/config_v33.js').write_text(Path('pwa/config_v33.js').read_text(encoding='utf-8').replace('3.3.0','3.4.0'),encoding='utf-8')
+          PY
+          cat > pwa/pwa.css <<'CSS'
+          .quick-tools{flex-wrap:wrap}.quick-tools .top-btn{min-width:22%;padding-left:4px;padding-right:4px}
+          .pwa-install-welcome{width:100%;min-height:50px;border:1px solid #ead3d5;border-radius:15px;background:#fff7f7;color:#8f1118;font-weight:900;font-size:15px;margin-top:10px}
+          .product{position:relative;overflow:hidden}.product::before{content:"";position:absolute;inset:2px 22% 2px 3px;background:url('logo.png') 25% center/58% no-repeat!important;opacity:.085!important;filter:grayscale(100%);pointer-events:none}.product>*{position:relative;z-index:1}
+          CSS
+          cat > pwa/pwa.js <<'JS'
+          let radianInstallPrompt=null;
+          const byId=id=>document.getElementById(id);
+          function installed(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
+          function installLabels(){['installPwa','installWelcome'].forEach(id=>{const b=byId(id);if(!b)return;b.textContent=installed()?'نصب شده':(radianInstallPrompt?'نصب روی گوشی':'راهنمای نصب');b.disabled=installed()})}
+          async function installRadian(){if(installed())return;if(radianInstallPrompt){const p=radianInstallPrompt;radianInstallPrompt=null;p.prompt();try{await p.userChoice}catch(e){}installLabels();return}alert('از منوی مرورگر گزینه «Install app» یا «Add to Home screen» را بزنید.')}
+          function welcome(){document.querySelectorAll('.overlay.open').forEach(x=>x.classList.remove('open'));const w=byId('welcomeScreen');if(w)w.classList.remove('hidden');document.body.style.overflow='';scrollTo(0,0)}
+          addEventListener('beforeinstallprompt',e=>{e.preventDefault();radianInstallPrompt=e;installLabels()});
+          addEventListener('appinstalled',()=>{radianInstallPrompt=null;installLabels()});
+          byId('installPwa')?.addEventListener('click',installRadian);byId('installWelcome')?.addEventListener('click',installRadian);byId('goWelcome')?.addEventListener('click',welcome);
+          if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
+          installLabels();
+          JS
+          cat > pwa/manifest.webmanifest <<'JSON'
+          {"name":"رادیان پارت آریا","short_name":"رادیان","lang":"fa","dir":"rtl","start_url":"./index.html","scope":"./","display":"standalone","background_color":"#ffffff","theme_color":"#0f2742","icons":[{"src":"logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
+          JSON
+          python3 - <<'PY'
+          from pathlib import Path
+          files=[p.name for p in Path('pwa').iterdir() if p.is_file() and p.name!='service-worker.js']
+          Path('pwa/service-worker.js').write_text("const C='radian-pwa-v3-4-0',F="+repr(['./']+['./'+x for x in files])+";self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const q=r.clone();caches.open(C).then(c=>c.put(e.request,q));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))))});",encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pwa
+          git commit -m "Publish Radian customer PWA v3.4.0"
+          git push
