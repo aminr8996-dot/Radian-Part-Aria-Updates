@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -23,8 +23,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare customer page
+      - name: Prepare latest APK and customer page
         run: |
+          curl -L --fail 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-6050-8210-bd6c-e44b3a1efa73/raw?se=2026-08-30T05%3A27%3A51Z&sp=r&sv=2026-02-06&sr=b&scid=cd8fd978-459e-5178-9050-b02b6d65b647&skoid=a0b9f82a-c86e-4064-a822-2aa38890bb37&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-30T01%3A52%3A09Z&ske=2026-08-31T01%3A52%3A09Z&sks=b&skv=2026-02-06&sig=p996aB7Uh6BMdyyFJaKm79i/oPYYUmMeCNnlukgLKv0%3D' -o /tmp/radian-apk.zip
+          rm -rf /tmp/radian-apk && mkdir -p /tmp/radian-apk
+          unzip -o /tmp/radian-apk.zip -d /tmp/radian-apk
+          cp /tmp/radian-apk/Radian-Part-Aria-v3.4.1.apk Radian-Part-Aria.apk
           cp Radian-Part-Aria.apk pwa/Radian-Part-Aria.apk
           python3 - <<'PY'
           from pathlib import Path
@@ -36,13 +40,23 @@ jobs:
           s=re.sub(r'<meta name="apple-mobile-web-app-capable"[^>]*>', '', s)
           s=re.sub(r'<script src="install-fix-v2\.js[^>]*></script>', '', s)
           s=s.replace('>نصب روی گوشی</button>', '>نصب کامل برنامه</button>')
-          s=s.replace('src="pwa.js"','src="pwa.js?v=3418"')
+          s=s.replace('src="pwa.js"','src="pwa.js?v=3421"')
           s=s.replace('src="excel_catalog_fix.js?v=1"','src="excel_catalog_fix.js?v=2"')
-          s=s.replace('src="logo.png"','src="logo.png?v=3418"')
-          s=s.replace('href="logo.png"','href="logo.png?v=3418"')
-          s=s.replace('href="style_v33_2.css"','href="style_v33_2.css?v=3418"')
+          s=s.replace('src="logo.png"','src="logo.png?v=3421"')
+          s=s.replace('href="logo.png"','href="logo.png?v=3421"')
+          s=s.replace('href="style_v33_2.css"','href="style_v33_2.css?v=3421"')
           p.write_text(s,encoding='utf-8')
           PY
+
+      - name: Persist latest APK
+        run: |
+          if ! git diff --quiet -- Radian-Part-Aria.apk; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add Radian-Part-Aria.apk
+            git commit -m "Update customer APK qty fix [skip ci]"
+            git push
+          fi
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
